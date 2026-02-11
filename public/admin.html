@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin - Pickleball Booking</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #f8fafc;
+      color: #1a1a1a;
+      min-height: 100vh;
+    }
+    header {
+      background: linear-gradient(135deg, #1e3a5f, #1e40af);
+      color: white;
+      padding: 1.5rem 2rem;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+    }
+    header h1 { font-size: 1.8rem; font-weight: 700; }
+    header p { opacity: 0.9; margin-top: 0.3rem; }
+    nav { margin-top: 0.8rem; }
+    nav a {
+      color: white;
+      text-decoration: none;
+      margin-right: 1.5rem;
+      font-weight: 500;
+      padding-bottom: 2px;
+      border-bottom: 2px solid rgba(255,255,255,0.4);
+    }
+    nav a.active, nav a:hover { border-bottom-color: white; }
+    .container { max-width: 1100px; margin: 2rem auto; padding: 0 1.5rem; }
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 1rem;
+      margin-bottom: 1.5rem;
+    }
+    .stat-card {
+      background: white;
+      border-radius: 12px;
+      padding: 1.25rem;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+    }
+    .stat-card .label { font-size: 0.85rem; color: #6b7280; font-weight: 500; }
+    .stat-card .value { font-size: 2rem; font-weight: 700; margin-top: 0.3rem; }
+    .stat-card.green .value { color: #15803d; }
+    .stat-card.blue .value { color: #1e40af; }
+    .stat-card.orange .value { color: #d97706; }
+    .stat-card.red .value { color: #dc2626; }
+    .card {
+      background: white;
+      border-radius: 12px;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+      padding: 1.5rem;
+      margin-bottom: 1.5rem;
+    }
+    .card h2 { font-size: 1.2rem; margin-bottom: 1rem; color: #1e3a5f; }
+    .filters {
+      display: flex;
+      gap: 0.75rem;
+      flex-wrap: wrap;
+      align-items: end;
+      margin-bottom: 1rem;
+    }
+    .filters .form-group { margin-bottom: 0; }
+    .filters label {
+      display: block;
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: #6b7280;
+      margin-bottom: 0.25rem;
+    }
+    .filters select, .filters input {
+      padding: 0.5rem 0.75rem;
+      border: 1px solid #d1d5db;
+      border-radius: 8px;
+      font-size: 0.9rem;
+    }
+    .filters select:focus, .filters input:focus {
+      outline: none;
+      border-color: #1e40af;
+      box-shadow: 0 0 0 3px rgba(30,64,175,0.1);
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+    th, td {
+      padding: 0.75rem;
+      text-align: left;
+      border-bottom: 1px solid #e5e7eb;
+      font-size: 0.9rem;
+    }
+    th {
+      font-weight: 600;
+      color: #6b7280;
+      font-size: 0.8rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    tr:hover { background: #f9fafb; }
+    .badge {
+      display: inline-block;
+      padding: 0.2rem 0.6rem;
+      border-radius: 999px;
+      font-size: 0.75rem;
+      font-weight: 600;
+    }
+    .badge-confirmed { background: #dcfce7; color: #15803d; }
+    .badge-cancelled { background: #fef2f2; color: #dc2626; }
+    .btn {
+      padding: 0.4rem 0.8rem;
+      border: none;
+      border-radius: 6px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .btn-cancel { background: #fef2f2; color: #dc2626; }
+    .btn-cancel:hover { background: #fee2e2; }
+    .btn-delete { background: #f3f4f6; color: #6b7280; }
+    .btn-delete:hover { background: #e5e7eb; }
+    .btn-primary {
+      background: #1e40af;
+      color: white;
+      padding: 0.5rem 1rem;
+      font-size: 0.85rem;
+    }
+    .btn-primary:hover { background: #1e3a8a; }
+    .btn-refresh {
+      background: #f0f9ff;
+      color: #1e40af;
+      padding: 0.5rem 1rem;
+      font-size: 0.85rem;
+    }
+    .btn-refresh:hover { background: #dbeafe; }
+    .empty-state {
+      text-align: center;
+      padding: 3rem 1rem;
+      color: #9ca3af;
+    }
+    .empty-state .icon { font-size: 2.5rem; margin-bottom: 0.5rem; }
+    .actions { display: flex; gap: 0.4rem; }
+    .header-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1rem;
+    }
+    .responsive-table { overflow-x: auto; }
+    @media (max-width: 768px) {
+      .stats-grid { grid-template-columns: repeat(2, 1fr); }
+      .filters { flex-direction: column; }
+      th, td { padding: 0.5rem; font-size: 0.8rem; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Admin Dashboard</h1>
+    <p>Manage your pickleball court bookings</p>
+    <nav>
+      <a href="/">Book a Court</a>
+      <a href="/admin" class="active">Admin Dashboard</a>
+    </nav>
+  </header>
+
+  <div class="container">
+    <!-- Stats -->
+    <div class="stats-grid">
+      <div class="stat-card blue">
+        <div class="label">Total Bookings</div>
+        <div class="value" id="stat-total">-</div>
+      </div>
+      <div class="stat-card green">
+        <div class="label">Today's Bookings</div>
+        <div class="value" id="stat-today">-</div>
+      </div>
+      <div class="stat-card orange">
+        <div class="label">Upcoming</div>
+        <div class="value" id="stat-upcoming">-</div>
+      </div>
+      <div class="stat-card red">
+        <div class="label">Cancelled</div>
+        <div class="value" id="stat-cancelled">-</div>
+      </div>
+    </div>
+
+    <!-- Bookings Table -->
+    <div class="card">
+      <div class="header-row">
+        <h2>Bookings</h2>
+        <button class="btn btn-refresh" onclick="loadAll()">Refresh</button>
+      </div>
+
+      <div class="filters">
+        <div class="form-group">
+          <label>Date</label>
+          <input type="date" id="filter-date" onchange="loadBookings()" />
+        </div>
+        <div class="form-group">
+          <label>Court</label>
+          <select id="filter-court" onchange="loadBookings()">
+            <option value="">All Courts</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Status</label>
+          <select id="filter-status" onchange="loadBookings()">
+            <option value="">All</option>
+            <option value="confirmed">Confirmed</option>
+            <option value="cancelled">Cancelled</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <button class="btn btn-primary" onclick="clearFilters()">Clear Filters</button>
+        </div>
+      </div>
+
+      <div class="responsive-table">
+        <table>
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Court</th>
+              <th>Date</th>
+              <th>Time</th>
+              <th>Customer</th>
+              <th>Email</th>
+              <th>Phone</th>
+              <th>Status</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="bookings-body">
+          </tbody>
+        </table>
+      </div>
+      <div id="empty-state" class="empty-state" style="display:none;">
+        <div class="icon">&#128467;</div>
+        <p>No bookings found</p>
+      </div>
+    </div>
+
+    <!-- Court Management -->
+    <div class="card">
+      <div class="header-row">
+        <h2>Courts</h2>
+      </div>
+      <div class="responsive-table">
+        <table>
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Name</th>
+              <th>Description</th>
+              <th>Status</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="courts-body"></tbody>
+        </table>
+      </div>
+      <div style="margin-top:1rem; display:flex; gap:0.5rem; flex-wrap:wrap;">
+        <input type="text" id="new-court-name" placeholder="Court name" style="padding:0.5rem;border:1px solid #d1d5db;border-radius:8px;" />
+        <input type="text" id="new-court-desc" placeholder="Description" style="padding:0.5rem;border:1px solid #d1d5db;border-radius:8px;" />
+        <button class="btn btn-primary" onclick="addCourt()">Add Court</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    function formatTime(t) {
+      const [h, m] = t.split(':');
+      const hour = parseInt(h);
+      const ampm = hour >= 12 ? 'PM' : 'AM';
+      const display = hour > 12 ? hour - 12 : hour === 0 ? 12 : hour;
+      return `${display}:${m} ${ampm}`;
+    }
+
+    function formatDate(d) {
+      return new Date(d + 'T12:00:00').toLocaleDateString('en-US', {
+        month: 'short', day: 'numeric', year: 'numeric'
+      });
+    }
+
+    async function loadStats() {
+      const res = await fetch('/api/admin/stats');
+      const stats = await res.json();
+      document.getElementById('stat-total').textContent = stats.totalBookings;
+      document.getElementById('stat-today').textContent = stats.todayBookings;
+      document.getElementById('stat-upcoming').textContent = stats.upcomingBookings;
+      document.getElementById('stat-cancelled').textContent = stats.cancelledBookings;
+    }
+
+    async function loadCourts() {
+      const res = await fetch('/api/admin/courts');
+      const courts = await res.json();
+
+      // Populate filter dropdown
+      const select = document.getElementById('filter-court');
+      const currentVal = select.value;
+      select.innerHTML = '<option value="">All Courts</option>' +
+        courts.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
+      select.value = currentVal;
+
+      // Populate courts table
+      document.getElementById('courts-body').innerHTML = courts.map(c => `
+        <tr>
+          <td>#${c.id}</td>
+          <td>${c.name}</td>
+          <td>${c.description || '-'}</td>
+          <td><span class="badge ${c.is_active ? 'badge-confirmed' : 'badge-cancelled'}">${c.is_active ? 'Active' : 'Inactive'}</span></td>
+          <td>
+            <button class="btn ${c.is_active ? 'btn-cancel' : 'btn-primary'}"
+                    onclick="toggleCourt(${c.id}, ${c.is_active ? 0 : 1})">
+              ${c.is_active ? 'Disable' : 'Enable'}
+            </button>
+          </td>
+        </tr>
+      `).join('');
+    }
+
+    async function loadBookings() {
+      const date = document.getElementById('filter-date').value;
+      const court_id = document.getElementById('filter-court').value;
+      const status = document.getElementById('filter-status').value;
+
+      const params = new URLSearchParams();
+      if (date) params.append('date', date);
+      if (court_id) params.append('court_id', court_id);
+      if (status) params.append('status', status);
+
+      const res = await fetch(`/api/admin/bookings?${params}`);
+      const bookings = await res.json();
+
+      const tbody = document.getElementById('bookings-body');
+      const empty = document.getElementById('empty-state');
+
+      if (bookings.length === 0) {
+        tbody.innerHTML = '';
+        empty.style.display = 'block';
+        return;
+      }
+
+      empty.style.display = 'none';
+      tbody.innerHTML = bookings.map(b => `
+        <tr>
+          <td>#${b.id}</td>
+          <td>${b.court_name}</td>
+          <td>${formatDate(b.date)}</td>
+          <td>${formatTime(b.start_time)} - ${formatTime(b.end_time)}</td>
+          <td>${b.customer_name}</td>
+          <td>${b.customer_email}</td>
+          <td>${b.customer_phone || '-'}</td>
+          <td><span class="badge badge-${b.status}">${b.status}</span></td>
+          <td>
+            <div class="actions">
+              ${b.status === 'confirmed' ? `<button class="btn btn-cancel" onclick="cancelBooking(${b.id})">Cancel</button>` : ''}
+              <button class="btn btn-delete" onclick="deleteBooking(${b.id})">Delete</button>
+            </div>
+          </td>
+        </tr>
+      `).join('');
+    }
+
+    async function cancelBooking(id) {
+      if (!confirm('Cancel this booking?')) return;
+      await fetch(`/api/admin/bookings/${id}/cancel`, { method: 'PATCH' });
+      loadAll();
+    }
+
+    async function deleteBooking(id) {
+      if (!confirm('Permanently delete this booking?')) return;
+      await fetch(`/api/admin/bookings/${id}`, { method: 'DELETE' });
+      loadAll();
+    }
+
+    async function toggleCourt(id, active) {
+      await fetch(`/api/admin/courts/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ is_active: active })
+      });
+      loadAll();
+    }
+
+    async function addCourt() {
+      const name = document.getElementById('new-court-name').value.trim();
+      const desc = document.getElementById('new-court-desc').value.trim();
+      if (!name) return alert('Court name is required');
+      await fetch('/api/admin/courts', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, description: desc || null })
+      });
+      document.getElementById('new-court-name').value = '';
+      document.getElementById('new-court-desc').value = '';
+      loadAll();
+    }
+
+    function clearFilters() {
+      document.getElementById('filter-date').value = '';
+      document.getElementById('filter-court').value = '';
+      document.getElementById('filter-status').value = '';
+      loadBookings();
+    }
+
+    function loadAll() {
+      loadStats();
+      loadCourts();
+      loadBookings();
+    }
+
+    loadAll();
+  </script>
+</body>
+</html>

@@ -1,0 +1,460 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Pickleball Court Booking</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #f0fdf4;
+      color: #1a1a1a;
+      min-height: 100vh;
+    }
+    header {
+      background: linear-gradient(135deg, #15803d, #166534);
+      color: white;
+      padding: 1.5rem 2rem;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+    }
+    header h1 { font-size: 1.8rem; font-weight: 700; }
+    header p { opacity: 0.9; margin-top: 0.3rem; }
+    nav { margin-top: 0.8rem; }
+    nav a {
+      color: white;
+      text-decoration: none;
+      margin-right: 1.5rem;
+      font-weight: 500;
+      padding-bottom: 2px;
+      border-bottom: 2px solid rgba(255,255,255,0.4);
+    }
+    nav a.active, nav a:hover {
+      border-bottom-color: white;
+    }
+    .container { max-width: 900px; margin: 2rem auto; padding: 0 1.5rem; }
+    .card {
+      background: white;
+      border-radius: 12px;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+      padding: 1.5rem;
+      margin-bottom: 1.5rem;
+    }
+    .card h2 {
+      font-size: 1.2rem;
+      margin-bottom: 1rem;
+      color: #15803d;
+    }
+    .form-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+      margin-bottom: 1rem;
+    }
+    .form-group { margin-bottom: 1rem; }
+    .form-group label {
+      display: block;
+      font-weight: 600;
+      margin-bottom: 0.35rem;
+      font-size: 0.9rem;
+      color: #374151;
+    }
+    .form-group input, .form-group select, .form-group textarea {
+      width: 100%;
+      padding: 0.6rem 0.75rem;
+      border: 1px solid #d1d5db;
+      border-radius: 8px;
+      font-size: 0.95rem;
+      transition: border-color 0.2s;
+    }
+    .form-group input:focus, .form-group select:focus, .form-group textarea:focus {
+      outline: none;
+      border-color: #15803d;
+      box-shadow: 0 0 0 3px rgba(21,128,61,0.1);
+    }
+    .slots-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+      gap: 0.5rem;
+      margin-top: 0.5rem;
+    }
+    .slot {
+      padding: 0.6rem;
+      border: 2px solid #d1d5db;
+      border-radius: 8px;
+      text-align: center;
+      cursor: pointer;
+      font-size: 0.9rem;
+      font-weight: 500;
+      transition: all 0.15s;
+    }
+    .slot.available:hover { border-color: #15803d; background: #f0fdf4; }
+    .slot.selected { border-color: #15803d; background: #15803d; color: white; }
+    .slot.unavailable {
+      background: #f3f4f6;
+      color: #9ca3af;
+      cursor: not-allowed;
+      text-decoration: line-through;
+    }
+    .btn {
+      background: #15803d;
+      color: white;
+      border: none;
+      padding: 0.75rem 2rem;
+      border-radius: 8px;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .btn:hover { background: #166534; }
+    .btn:disabled { background: #9ca3af; cursor: not-allowed; }
+    .alert {
+      padding: 1rem;
+      border-radius: 8px;
+      margin-bottom: 1rem;
+      font-weight: 500;
+    }
+    .alert-success { background: #dcfce7; color: #15803d; border: 1px solid #bbf7d0; }
+    .alert-error { background: #fef2f2; color: #dc2626; border: 1px solid #fecaca; }
+    .confirmation {
+      text-align: center;
+      padding: 2rem;
+    }
+    .confirmation .checkmark {
+      font-size: 3rem;
+      margin-bottom: 1rem;
+    }
+    .confirmation h2 { color: #15803d; margin-bottom: 0.5rem; }
+    .confirmation .details {
+      background: #f0fdf4;
+      border-radius: 8px;
+      padding: 1rem;
+      margin: 1rem 0;
+      text-align: left;
+    }
+    .confirmation .details p { margin: 0.4rem 0; }
+    .court-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 0.75rem; }
+    .court-card {
+      border: 2px solid #d1d5db;
+      border-radius: 10px;
+      padding: 1rem;
+      cursor: pointer;
+      text-align: center;
+      transition: all 0.15s;
+    }
+    .court-card:hover { border-color: #15803d; background: #f0fdf4; }
+    .court-card.selected { border-color: #15803d; background: #15803d; color: white; }
+    .court-card .court-icon { font-size: 1.5rem; margin-bottom: 0.3rem; }
+    .court-card .court-name { font-weight: 600; }
+    .court-card .court-desc { font-size: 0.8rem; opacity: 0.7; margin-top: 0.2rem; }
+    .step-indicator {
+      display: flex;
+      justify-content: center;
+      gap: 0.5rem;
+      margin-bottom: 1.5rem;
+    }
+    .step {
+      width: 2.2rem;
+      height: 2.2rem;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: 0.85rem;
+      background: #e5e7eb;
+      color: #6b7280;
+    }
+    .step.active { background: #15803d; color: white; }
+    .step.done { background: #86efac; color: #15803d; }
+    .step-line {
+      width: 3rem;
+      height: 2px;
+      background: #d1d5db;
+      align-self: center;
+    }
+    .step-line.done { background: #86efac; }
+    @media (max-width: 600px) {
+      .form-row { grid-template-columns: 1fr; }
+      .slots-grid { grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Pickleball Court Booking</h1>
+    <p>Reserve your court in just a few clicks</p>
+    <nav>
+      <a href="/" class="active">Book a Court</a>
+      <a href="/admin">Admin Dashboard</a>
+    </nav>
+  </header>
+
+  <div class="container">
+    <div id="step-indicator" class="step-indicator">
+      <div class="step active" id="s1">1</div>
+      <div class="step-line" id="sl1"></div>
+      <div class="step" id="s2">2</div>
+      <div class="step-line" id="sl2"></div>
+      <div class="step" id="s3">3</div>
+    </div>
+
+    <div id="alert-box"></div>
+
+    <!-- Step 1: Select court and date -->
+    <div id="step1" class="card">
+      <h2>Select Court & Date</h2>
+      <div class="form-group">
+        <label>Choose a Court</label>
+        <div id="court-list" class="court-cards"></div>
+      </div>
+      <div class="form-group">
+        <label for="date">Select Date</label>
+        <input type="date" id="date" />
+      </div>
+      <button class="btn" id="btn-step1" disabled onclick="goToStep2()">Next: Choose Time</button>
+    </div>
+
+    <!-- Step 2: Select time slot -->
+    <div id="step2" class="card" style="display:none;">
+      <h2>Select Time Slot</h2>
+      <p id="slot-summary" style="margin-bottom:1rem; color:#6b7280;"></p>
+      <div id="slots" class="slots-grid"></div>
+      <div style="margin-top:1rem; display:flex; gap:0.75rem;">
+        <button class="btn" style="background:#6b7280;" onclick="goToStep1()">Back</button>
+        <button class="btn" id="btn-step2" disabled onclick="goToStep3()">Next: Your Details</button>
+      </div>
+    </div>
+
+    <!-- Step 3: Customer details -->
+    <div id="step3" class="card" style="display:none;">
+      <h2>Your Details</h2>
+      <div class="form-row">
+        <div class="form-group">
+          <label for="name">Full Name *</label>
+          <input type="text" id="name" placeholder="John Doe" required />
+        </div>
+        <div class="form-group">
+          <label for="email">Email *</label>
+          <input type="email" id="email" placeholder="john@example.com" required />
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label for="phone">Phone (optional)</label>
+          <input type="tel" id="phone" placeholder="(555) 123-4567" />
+        </div>
+        <div class="form-group">
+          <label for="notes">Notes (optional)</label>
+          <input type="text" id="notes" placeholder="Any special requests" />
+        </div>
+      </div>
+      <div style="display:flex; gap:0.75rem;">
+        <button class="btn" style="background:#6b7280;" onclick="goToStep2()">Back</button>
+        <button class="btn" id="btn-submit" onclick="submitBooking()">Confirm Booking</button>
+      </div>
+    </div>
+
+    <!-- Confirmation -->
+    <div id="confirmation" class="card" style="display:none;">
+      <div class="confirmation">
+        <div class="checkmark">&#10003;</div>
+        <h2>Booking Confirmed!</h2>
+        <p>Your court has been reserved successfully.</p>
+        <div class="details" id="confirm-details"></div>
+        <button class="btn" style="margin-top:1rem;" onclick="resetBooking()">Book Another Court</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let courts = [];
+    let selectedCourt = null;
+    let selectedDate = null;
+    let selectedSlot = null;
+
+    const today = new Date().toISOString().split('T')[0];
+    document.getElementById('date').min = today;
+    document.getElementById('date').value = today;
+
+    // Load courts
+    async function loadCourts() {
+      const res = await fetch('/api/courts');
+      courts = await res.json();
+      const container = document.getElementById('court-list');
+      container.innerHTML = courts.map(c => `
+        <div class="court-card" data-id="${c.id}" onclick="selectCourt(${c.id})">
+          <div class="court-icon">&#127955;</div>
+          <div class="court-name">${c.name}</div>
+          <div class="court-desc">${c.description || ''}</div>
+        </div>
+      `).join('');
+    }
+
+    function selectCourt(id) {
+      selectedCourt = courts.find(c => c.id === id);
+      document.querySelectorAll('.court-card').forEach(el => {
+        el.classList.toggle('selected', parseInt(el.dataset.id) === id);
+      });
+      checkStep1();
+    }
+
+    document.getElementById('date').addEventListener('change', function() {
+      selectedDate = this.value;
+      checkStep1();
+    });
+
+    function checkStep1() {
+      selectedDate = document.getElementById('date').value;
+      document.getElementById('btn-step1').disabled = !(selectedCourt && selectedDate);
+    }
+
+    async function loadSlots() {
+      const res = await fetch(`/api/availability?court_id=${selectedCourt.id}&date=${selectedDate}`);
+      const slots = await res.json();
+      const container = document.getElementById('slots');
+      container.innerHTML = slots.map(s => {
+        const cls = s.available ? 'slot available' : 'slot unavailable';
+        return `<div class="${cls}" data-start="${s.start_time}" data-end="${s.end_time}"
+                     onclick="${s.available ? `selectSlot(this, '${s.start_time}', '${s.end_time}')` : ''}">
+                  ${formatTime(s.start_time)} - ${formatTime(s.end_time)}
+                </div>`;
+      }).join('');
+    }
+
+    function formatTime(t) {
+      const [h, m] = t.split(':');
+      const hour = parseInt(h);
+      const ampm = hour >= 12 ? 'PM' : 'AM';
+      const display = hour > 12 ? hour - 12 : hour === 0 ? 12 : hour;
+      return `${display}:${m} ${ampm}`;
+    }
+
+    function selectSlot(el, start, end) {
+      selectedSlot = { start_time: start, end_time: end };
+      document.querySelectorAll('.slot').forEach(s => s.classList.remove('selected'));
+      el.classList.add('selected');
+      document.getElementById('btn-step2').disabled = false;
+    }
+
+    function showStep(n) {
+      ['step1','step2','step3','confirmation'].forEach(id => {
+        document.getElementById(id).style.display = 'none';
+      });
+      if (n <= 3) {
+        document.getElementById(`step${n}`).style.display = 'block';
+      } else {
+        document.getElementById('confirmation').style.display = 'block';
+      }
+      // Update step indicator
+      for (let i = 1; i <= 3; i++) {
+        const el = document.getElementById(`s${i}`);
+        el.classList.remove('active', 'done');
+        if (i < n) el.classList.add('done');
+        else if (i === n) el.classList.add('active');
+      }
+      for (let i = 1; i <= 2; i++) {
+        const el = document.getElementById(`sl${i}`);
+        el.classList.toggle('done', i < n);
+      }
+    }
+
+    function goToStep1() {
+      selectedSlot = null;
+      document.getElementById('btn-step2').disabled = true;
+      showStep(1);
+    }
+
+    async function goToStep2() {
+      selectedSlot = null;
+      document.getElementById('btn-step2').disabled = true;
+      await loadSlots();
+      document.getElementById('slot-summary').textContent =
+        `${selectedCourt.name} on ${new Date(selectedDate + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}`;
+      showStep(2);
+    }
+
+    function goToStep3() {
+      showStep(3);
+    }
+
+    function showAlert(message, type) {
+      const box = document.getElementById('alert-box');
+      box.innerHTML = `<div class="alert alert-${type}">${message}</div>`;
+      setTimeout(() => box.innerHTML = '', 5000);
+    }
+
+    async function submitBooking() {
+      const name = document.getElementById('name').value.trim();
+      const email = document.getElementById('email').value.trim();
+      const phone = document.getElementById('phone').value.trim();
+      const notes = document.getElementById('notes').value.trim();
+
+      if (!name || !email) {
+        showAlert('Please fill in your name and email.', 'error');
+        return;
+      }
+
+      const btn = document.getElementById('btn-submit');
+      btn.disabled = true;
+      btn.textContent = 'Booking...';
+
+      try {
+        const res = await fetch('/api/bookings', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            court_id: selectedCourt.id,
+            customer_name: name,
+            customer_email: email,
+            customer_phone: phone || null,
+            date: selectedDate,
+            start_time: selectedSlot.start_time,
+            end_time: selectedSlot.end_time,
+            notes: notes || null
+          })
+        });
+
+        if (!res.ok) {
+          const err = await res.json();
+          throw new Error(err.error || 'Booking failed');
+        }
+
+        const booking = await res.json();
+        document.getElementById('confirm-details').innerHTML = `
+          <p><strong>Court:</strong> ${selectedCourt.name}</p>
+          <p><strong>Date:</strong> ${new Date(selectedDate + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</p>
+          <p><strong>Time:</strong> ${formatTime(selectedSlot.start_time)} - ${formatTime(selectedSlot.end_time)}</p>
+          <p><strong>Name:</strong> ${name}</p>
+          <p><strong>Email:</strong> ${email}</p>
+          <p><strong>Booking ID:</strong> #${booking.id}</p>
+        `;
+        showStep(4);
+      } catch (err) {
+        showAlert(err.message, 'error');
+      } finally {
+        btn.disabled = false;
+        btn.textContent = 'Confirm Booking';
+      }
+    }
+
+    function resetBooking() {
+      selectedCourt = null;
+      selectedDate = null;
+      selectedSlot = null;
+      document.getElementById('name').value = '';
+      document.getElementById('email').value = '';
+      document.getElementById('phone').value = '';
+      document.getElementById('notes').value = '';
+      document.getElementById('date').value = today;
+      document.querySelectorAll('.court-card').forEach(el => el.classList.remove('selected'));
+      document.getElementById('btn-step1').disabled = true;
+      showStep(1);
+    }
+
+    loadCourts();
+    checkStep1();
+  </script>
+</body>
+</html>
